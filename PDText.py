@@ -7,10 +7,15 @@ Usage is subject to license
 import io
 import os
 import sys
+from threading import Thread, Lock
 
 import pytesseract
 from PIL import Image
 from wand.image import Image as Convert
+
+completed: int = 1
+total: int = 0
+lock: Lock = Lock()
 
 """
 Tramslates the file at the filepath to text
@@ -32,7 +37,14 @@ def translate(file: str) -> None:
         with open(f'{os.path.splitext(file)[0]}.txt', 'w') as f:
             f.write(text)
 
-    print("done")
+    global lock
+    global completed
+    lock.acquire()
+    print(f'done: {file}, {round((completed/total)*100, 2)}% completed')
+    completed += 1
+    if(lock.locked()):
+        lock.release()
+
 
 def main():
     args = sys.argv[1:]
@@ -44,14 +56,24 @@ def main():
         print("No files or directories provided")
         exit()
 
-    for file in files:
-        translate(file)
+    threads: list[Thread] = []
+
+    for filePath in files:
+        threads.append(Thread(target=translate, args=[filePath]))
 
     for dir in dirs:
         for root, subdirs, subfiles in os.walk(dir):
             for subfile in subfiles:
                 if(subfile.lower().endswith('.pdf')):
-                    translate(root + "\\" + subfile)
+                    filePath = root + "\\" + subfile
+                    threads.append(Thread(target=translate, args=[filePath]))
+
+    global total
+    total = len(threads)
+
+    for thread in threads:
+        thread.start()
+    
 
 if __name__ == "__main__":
     main()
