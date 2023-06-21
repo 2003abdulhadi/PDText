@@ -53,7 +53,7 @@ def main():
     dirs = [arg for arg in args if os.path.isdir(arg)]
 
     if(not any([files, dirs])):
-        print("No files or directories provided")
+        print("No PDF files or directories provided")
         exit()
 
     threads: list[Thread] = []
@@ -62,14 +62,11 @@ def main():
         threads.append(Thread(target=translate, args=[filePath]))
 
     for dir in dirs:
-        for root, subdirs, subfiles in os.walk(dir):
+        for root, _, subfiles in os.walk(dir):
             for subfile in subfiles:
                 if(subfile.lower().endswith('.pdf')):
                     filePath = root + "\\" + subfile
                     threads.append(Thread(target=translate, args=[filePath]))
-
-    global total
-    total = len(threads)
 
     for thread in threads:
         thread.start()
