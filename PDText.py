@@ -7,13 +7,16 @@ Usage is subject to license
 import io
 import os
 import sys
+import multiprocessing
 from threading import Thread, Lock
+import time
 
 import pytesseract
 from PIL import Image
 from wand.image import Image as Convert
 
-completed: int = 1
+cores: int = multiprocessing.cpu_count()
+completed: int = 0
 total: int = 0
 lock: Lock = Lock()
 
@@ -23,7 +26,7 @@ The file is assumed to exist and be a pdf
 """
 def translate(file: str) -> None:
     print("translating: " + file)
-    with Convert(filename=file, resolution=300) as img:
+    with Convert(filename=file, resolution=600) as img:
         # set image properties
         img.format = 'tiff'
         img.compression_quality = 99
@@ -39,9 +42,11 @@ def translate(file: str) -> None:
 
     global lock
     global completed
+    global total
+
     lock.acquire()
-    print(f'done: {file}, {round((completed/total)*100, 2)}% completed')
     completed += 1
+    print(f'done: {file}, {round((completed/total)*100, 2)}% completed')
     if(lock.locked()):
         lock.release()
 
@@ -57,7 +62,7 @@ def main():
         exit()
 
     threads: list[Thread] = []
-
+    
     for filePath in files:
         threads.append(Thread(target=translate, args=[filePath]))
 
@@ -67,9 +72,17 @@ def main():
                 if(subfile.lower().endswith('.pdf')):
                     filePath = root + "\\" + subfile
                     threads.append(Thread(target=translate, args=[filePath]))
+                    
+    global total
+    total = len(threads)
+    started: int = 0
 
     for thread in threads:
         thread.start()
+        started += 1
+        while(started - completed >= cores):
+            print(f'{started, completed, cores}')
+            time.sleep(1)
     
 
 if __name__ == "__main__":
