@@ -4,16 +4,13 @@ Github Repo: https://github.com/2003abdulhadi/PDText
 Usage is subject to license
 """
 
-import io
 import os
 import sys
 import multiprocessing
 from threading import Thread, Lock
-import time
 
 import pytesseract
-from PIL import Image
-from wand.image import Image as Convert
+from pdf2image import convert_from_path as convert
 
 cores: int = multiprocessing.cpu_count()
 completed: int = 0
@@ -26,19 +23,15 @@ The file is assumed to exist and be a pdf
 """
 def translate(file: str) -> None:
     print("translating: " + file)
-    with Convert(filename=file, resolution=600) as img:
-        # set image properties
-        img.format = 'tiff'
-        img.compression_quality = 99
 
-        # convert image to bytes, bytes to image, image to text
-        value = img.make_blob()
-        image = Image.open(io.BytesIO(value))
-        text = pytesseract.image_to_string(image)
+    pages = convert(file, 300);
+    text = ""
+    
+    for page in pages:
+        text += pytesseract.image_to_string(page)
 
-        # save text
-        with open(f'{os.path.splitext(file)[0]}.txt', 'w') as f:
-            f.write(text)
+    with open(f'{os.path.splitext(file)[0]}.txt', 'w') as f:
+        f.write(text)
 
     global lock
     global completed
@@ -81,8 +74,7 @@ def main():
         thread.start()
         started += 1
         while(started - completed >= cores):
-            print(f'{started, completed, cores}')
-            time.sleep(1)
+            pass
     
 
 if __name__ == "__main__":

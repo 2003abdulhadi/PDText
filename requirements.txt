@@ -1,2 +1,2 @@
 pytesseract
-wand
+pdf2image
