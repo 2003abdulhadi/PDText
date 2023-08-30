@@ -6,6 +6,8 @@ PDText is a Python script for converting PDF files to plaintext
 
 Clone the repo to your local machine and install the requirements
 
+Note that pdf2image requires poppler to be installed, the instructions for which can be found online
+
 ```bash
 pip install -r requirements.txt
 ```
