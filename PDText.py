@@ -24,7 +24,7 @@ The file is assumed to exist and be a pdf
 def translate(file: str) -> None:
     print("translating: " + file)
 
-    pages = convert(file, 300);
+    pages = convert(file, 600);
     text = ""
     
     for page in pages:
@@ -75,6 +75,9 @@ def main():
         started += 1
         while(started - completed >= cores):
             pass
+
+    for thread in threads:
+        thread.join()
     
 
 if __name__ == "__main__":
